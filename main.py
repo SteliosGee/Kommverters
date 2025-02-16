@@ -20,49 +20,60 @@ class DropLabel(QWidget):
 
         # Layout inside drop area
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Container for icon, text, and button
-        self.container = QWidget()
-        self.container_layout = QVBoxLayout(self.container)
-        self.container_layout.setAlignment(Qt.AlignCenter)
+        self.main_container = QWidget()
+        self.main_container.setFixedSize(500, 200)
+        self.container_layout = QVBoxLayout(self.main_container)
+        self.container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
 
         # Icon
         self.icon = QLabel()
         pixmap = QPixmap("image.png")  # Load the provided icon
-        pixmap = pixmap.scaled(60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        pixmap = pixmap.scaled(420, 180, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.icon.setPixmap(pixmap)
-        self.icon.setAlignment(Qt.AlignCenter)
-
-        # Text
-        self.text_label = QLabel("Drop your file here or browse files")
-        self.text_label.setStyleSheet("font-size: 16px; color: #CCCCCC;")
-        self.text_label.setAlignment(Qt.AlignCenter)
-
-        # Browse Button inside the drop area
-        self.browse_button = QPushButton("Browse Files")
-        self.browse_button.setStyleSheet("""
-            QPushButton {
-                background-color: #FF8800;
-                color: white;
-                font-size: 16px;
-                padding: 8px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #FFAA33;
+        self.icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # transparent border
+        self.icon.setStyleSheet("""
+            QLabel {
+                border: 2px solid transparent;
+                border-radius: 10px;
             }
         """)
-        self.browse_button.clicked.connect(self.browse_file)
 
         # Add widgets to container layout
         self.container_layout.addWidget(self.icon)
-        self.container_layout.addWidget(self.text_label)
-        self.container_layout.addWidget(self.browse_button)
-        self.container.setLayout(self.container_layout)
+        self.main_container.setLayout(self.container_layout)
 
-        # Add container to main layout
-        layout.addWidget(self.container)
+        # Success message container (initially hidden)
+        self.success_container = QLabel("File Uploaded")
+        self.success_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.success_container.setFixedSize(500, 100) 
+        self.success_container.setStyleSheet("""
+            QWidget {
+                border: 2px dashed #555;
+                background-color: #222;
+                border-radius: 10px;
+                padding: 20px;
+                                         
+            }
+        """)
+        self.success_container.setVisible(False)
+
+        # Add containers to main layout
+        layout.addWidget(self.main_container)
+        layout.addWidget(self.success_container)
+
+    def mousePressEvent(self, event):
+        """Trigger browse_file when the container is clicked."""
+        self.browse_file()
+
+    def browse_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
+        if file_path:
+            self.show_success()
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -72,12 +83,12 @@ class DropLabel(QWidget):
         urls = event.mimeData().urls()
         if urls:
             file_path = urls[0].toLocalFile()
-            self.text_label.setText(f"File dropped: {file_path}")
+            self.show_success()
 
-    def browse_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
-        if file_path:
-            self.text_label.setText(f"Selected: {file_path}")
+    def show_success(self):
+        """Hide main container and show success message."""
+        self.main_container.setVisible(False)
+        self.success_container.setVisible(True)
 
 class MainWindow(QMainWindow):
     def __init__(self):
