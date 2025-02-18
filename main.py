@@ -1,14 +1,18 @@
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QLabel, QWidget, QVBoxLayout,
-    QPushButton, QFileDialog
+    QHBoxLayout, QPushButton, QFileDialog, QComboBox, QLineEdit
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QPixmap
+import os
 
 class DropLabel(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, switch_to_convertion_screen, parent=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
+        self.switch_to_convertion_screen = switch_to_convertion_screen  # Function to switch screen
+        self.uploaded_file_path = ""  # Store full file path
+
         self.setStyleSheet("""
             QWidget {
                 border: 2px dashed #555;
@@ -18,16 +22,14 @@ class DropLabel(QWidget):
             }
         """)
 
-        # Layout inside drop area
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Container for icon, text, and button
+        # Container for icon
         self.main_container = QWidget()
         self.main_container.setFixedSize(500, 200)
         self.container_layout = QVBoxLayout(self.main_container)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
 
         # Icon
         self.icon = QLabel()
@@ -35,7 +37,6 @@ class DropLabel(QWidget):
         pixmap = pixmap.scaled(420, 180, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.icon.setPixmap(pixmap)
         self.icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # transparent border
         self.icon.setStyleSheet("""
             QLabel {
                 border: 2px solid transparent;
@@ -47,17 +48,16 @@ class DropLabel(QWidget):
         self.container_layout.addWidget(self.icon)
         self.main_container.setLayout(self.container_layout)
 
-        # Success message container (initially hidden)
+        # Success message container
         self.success_container = QLabel("File Uploaded")
         self.success_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.success_container.setFixedSize(500, 100) 
+        self.success_container.setFixedSize(500, 100)
         self.success_container.setStyleSheet("""
             QWidget {
                 border: 2px dashed #555;
                 background-color: #222;
                 border-radius: 10px;
                 padding: 20px;
-                                         
             }
         """)
         self.success_container.setVisible(False)
@@ -73,6 +73,7 @@ class DropLabel(QWidget):
     def browse_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select a File")
         if file_path:
+            self.uploaded_file_path = file_path  # Store file path
             self.show_success()
 
     def dragEnterEvent(self, event: QDragEnterEvent):
@@ -82,13 +83,88 @@ class DropLabel(QWidget):
     def dropEvent(self, event: QDropEvent):
         urls = event.mimeData().urls()
         if urls:
-            file_path = urls[0].toLocalFile()
+            self.uploaded_file_path = urls[0].toLocalFile()  # Store file path
             self.show_success()
 
     def show_success(self):
-        """Hide main container and show success message."""
+        """Hide main container, show success message, and switch screen."""
         self.main_container.setVisible(False)
         self.success_container.setVisible(True)
+        self.switch_to_convertion_screen(self.uploaded_file_path)  # Pass full file path
+
+
+class ConvertionScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Conversion Screen")
+        self.setStyleSheet("background-color: #111; color: white;")
+
+        self.layout = QVBoxLayout()
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.label = QLabel("You are on the Conversion Screen")
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.file_display_layout = QHBoxLayout()
+        self.file_display_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.image_preview = QLabel()
+        self.file_name_label = QLabel("")
+        self.file_name_label.setStyleSheet("font-size: 16px; color: #FF8800;")
+
+        self.file_display_layout.addWidget(self.image_preview)
+        self.file_display_layout.addWidget(self.file_name_label)
+
+        self.output_layout = QHBoxLayout()
+        self.output_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.format_layout = QVBoxLayout()
+        self.format_label = QLabel("Format:")
+        self.format_label.setStyleSheet("color: blue;")
+        self.desired_format = QComboBox()
+        self.desired_format.addItems(["PNG", "JPG", "BMP", "GIF"])
+        self.format_layout.addWidget(self.format_label)
+        self.format_layout.addWidget(self.desired_format)
+
+        self.output_name_layout = QVBoxLayout()
+        self.output_name_label = QLabel("Output Name:")
+        self.output_name_label.setStyleSheet("color: blue;")
+        self.output_name = QLineEdit()
+        self.output_name_layout.addWidget(self.output_name_label)
+        self.output_name_layout.addWidget(self.output_name)
+
+        self.size_layout = QVBoxLayout()
+        self.size_label = QLabel("Size:")
+        self.size_label.setStyleSheet("color: green;")
+        self.size_combo = QComboBox()
+        self.size_combo.addItems(["Small", "Medium", "Large"])
+        self.size_layout.addWidget(self.size_label)
+        self.size_layout.addWidget(self.size_combo)
+
+        self.output_layout.addLayout(self.format_layout)
+        self.output_layout.addLayout(self.output_name_layout)
+        self.output_layout.addLayout(self.size_layout)
+
+        self.layout.addWidget(self.label)
+        self.layout.addLayout(self.file_display_layout)
+        self.layout.addLayout(self.output_layout)
+        self.setLayout(self.layout)
+
+
+    def set_file(self, file_path):
+        """Update UI with file name and image preview (if applicable)."""
+        file_name = os.path.basename(file_path)
+        self.file_name_label.setText(file_name)
+
+        # Check if the file is an image
+        if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            pixmap = QPixmap(file_path)
+            if not pixmap.isNull():
+                pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                self.image_preview.setPixmap(pixmap)
+        else:
+            self.image_preview.clear()  # Clear image preview for non-image files
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -97,11 +173,11 @@ class MainWindow(QMainWindow):
         self.setFixedSize(600, 400)
         self.setStyleSheet("background-color: #111; color: white;")
 
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
 
-        layout = QVBoxLayout(central_widget)
-        layout.setAlignment(Qt.AlignCenter)
+        self.layout = QVBoxLayout(self.central_widget)
+        self.layout.setAlignment(Qt.AlignCenter)
 
         # Title
         title = QLabel("Kommverters")
@@ -113,11 +189,21 @@ class MainWindow(QMainWindow):
         subtitle.setAlignment(Qt.AlignCenter)
 
         # Drop Zone
-        self.drop_label = DropLabel()
+        self.drop_label = DropLabel(self.show_convertion_screen)
 
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addWidget(self.drop_label)
+        self.layout.addWidget(title)
+        self.layout.addWidget(subtitle)
+        self.layout.addWidget(self.drop_label)
+
+        # Create conversion screen
+        self.convertion_screen = ConvertionScreen()
+
+    def show_convertion_screen(self, file_path):
+        """Switch to the conversion screen and display file details."""
+        self.convertion_screen.set_file(file_path)
+        self.setCentralWidget(self.convertion_screen)
+        self.convertion_screen.show()
+
 
 app = QApplication([])
 window = MainWindow()
