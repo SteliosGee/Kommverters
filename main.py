@@ -105,8 +105,14 @@ class ConvertionScreen(QWidget):
         self.label = QLabel("You are on the Conversion Screen")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # New wrapper layout with pink background
+        self.wrapper_layout = QVBoxLayout()
+        self.wrapper_container = QWidget()
+        self.wrapper_container.setStyleSheet("background-color: #222; border-radius: 10px; padding: 10px;")
+        self.wrapper_container.setLayout(self.wrapper_layout)
+
         self.file_display_layout = QHBoxLayout()
-        self.file_display_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.file_display_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.image_preview = QLabel()
         self.file_name_label = QLabel("")
@@ -120,24 +126,27 @@ class ConvertionScreen(QWidget):
 
         self.format_layout = QVBoxLayout()
         self.format_label = QLabel("Format:")
-        self.format_label.setStyleSheet("color: blue;")
+        self.format_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.desired_format = QComboBox()
         self.desired_format.addItems(["PNG", "JPG", "BMP", "GIF"])
+        self.desired_format.setStyleSheet("background-color: #333; color: white;")
         self.format_layout.addWidget(self.format_label)
         self.format_layout.addWidget(self.desired_format)
 
         self.output_name_layout = QVBoxLayout()
         self.output_name_label = QLabel("Output Name:")
-        self.output_name_label.setStyleSheet("color: blue;")
+        self.output_name_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.output_name = QLineEdit()
+        self.output_name.setStyleSheet("background-color: #333; color: white;")
         self.output_name_layout.addWidget(self.output_name_label)
         self.output_name_layout.addWidget(self.output_name)
 
         self.size_layout = QVBoxLayout()
         self.size_label = QLabel("Size:")
-        self.size_label.setStyleSheet("color: green;")
+        self.size_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.size_combo = QComboBox()
         self.size_combo.addItems(["Small", "Medium", "Large"])
+        self.size_combo.setStyleSheet("background-color: #333; color: white;")
         self.size_layout.addWidget(self.size_label)
         self.size_layout.addWidget(self.size_combo)
 
@@ -145,9 +154,13 @@ class ConvertionScreen(QWidget):
         self.output_layout.addLayout(self.output_name_layout)
         self.output_layout.addLayout(self.size_layout)
 
+        # Add layouts inside the pink wrapper
+        self.wrapper_layout.addLayout(self.file_display_layout)
+        self.wrapper_layout.addLayout(self.output_layout)
+
+        # Add widgets to the main layout
         self.layout.addWidget(self.label)
-        self.layout.addLayout(self.file_display_layout)
-        self.layout.addLayout(self.output_layout)
+        self.layout.addWidget(self.wrapper_container)  # Add the pink container
         self.setLayout(self.layout)
 
 
