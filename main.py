@@ -101,9 +101,11 @@ class ConvertionScreen(QWidget):
 
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.setContentsMargins(50, 50, 50, 50)
 
-        self.label = QLabel("You are on the Conversion Screen")
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label = QLabel("Kommverters")
+        self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.label.setStyleSheet("font-size: 32px; font-weight: bold; color: #FF8800;")
 
         # New wrapper layout with pink background
         self.wrapper_layout = QVBoxLayout()
@@ -129,7 +131,31 @@ class ConvertionScreen(QWidget):
         self.format_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.desired_format = QComboBox()
         self.desired_format.addItems(["PNG", "JPG", "BMP", "GIF"])
-        self.desired_format.setStyleSheet("background-color: #333; color: white;")
+        self.desired_format.setStyleSheet("""
+                                          QComboBox {
+                                              background-color: #333;
+                                              color: white;
+                                          }
+                                          QComboBox::drop-down {
+                                              subcontrol-origin: padding;
+                                              subcontrol-position: top right;
+                                              width: 20px;
+                                              border-left-width: 1px;
+                                              border-left-color: #555;
+                                              border-left-style: solid;
+                                              border-top-right-radius: 10px;
+                                              border-bottom-right-radius: 10px;
+                                              border: none;
+                                              background-color: #333;
+                                              color: white;
+                                          }
+                                          QComboBox::down-arrow {
+                                              image: url(arrow-down.png);
+                                              width: 20px;
+                                              height: 20px;
+                                              margin-right: 10px;
+                                          }
+                                            """)
         self.format_layout.addWidget(self.format_label)
         self.format_layout.addWidget(self.desired_format)
 
@@ -146,7 +172,31 @@ class ConvertionScreen(QWidget):
         self.size_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.size_combo = QComboBox()
         self.size_combo.addItems(["Small", "Medium", "Large"])
-        self.size_combo.setStyleSheet("background-color: #333; color: white;")
+        self.size_combo.setStyleSheet("""
+                                      QComboBox {
+                                          background-color: #333;
+                                          color: white;
+                                      }
+                                    QComboBox::drop-down {
+                                        subcontrol-origin: padding;
+                                        subcontrol-position: top right;
+                                        width: 20px;
+                                        border-left-width: 1px;
+                                        border-left-color: #555;
+                                        border-left-style: solid;
+                                        border-top-right-radius: 10px;
+                                        border-bottom-right-radius: 10px;
+                                        border: none;
+                                        background-color: #333;
+                                        color: white;
+                                      }
+                                    QComboBox::down-arrow {
+                                        image: url(arrow-down.png);
+                                        width: 20px;
+                                        height: 20px;
+                                      margin-right: 10px;
+                                        }
+                                      """)
         self.size_layout.addWidget(self.size_label)
         self.size_layout.addWidget(self.size_combo)
 
@@ -162,6 +212,61 @@ class ConvertionScreen(QWidget):
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.wrapper_container)  # Add the pink container
         self.setLayout(self.layout)
+
+        self.convert_layout = QHBoxLayout()
+        self.convert_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.convert_button = QPushButton("Convert")
+        self.convert_button.setStyleSheet("""
+                                          QPushButton {
+                                              background-color: #FF8800;
+                                              color: white;
+                                              padding: 10px 20px;
+                                              border-radius: 5px;
+                                          }
+                                          QPushButton:hover {
+                                              background-color: #FFA500;
+                                          }
+                                          """)
+        
+        self.file_size_label = QLabel("File Size: 0 KB")
+        self.file_size_label.setStyleSheet("color: #FF8800; font-size: 15px; margin-right: 10px;")
+
+
+        self.file_source = QComboBox()
+        self.file_source.addItems(["Local", "URL"])
+        self.file_source.setStyleSheet("""
+                                        QComboBox {
+                                            background-color: #333;
+                                            color: white;
+                                        }
+                                        QComboBox::drop-down {
+                                            subcontrol-origin: padding;
+                                            subcontrol-position: top right;
+                                            width: 20px;
+                                            border-left-width: 1px;
+                                            border-left-color: #555;
+                                            border-left-style: solid;
+                                            border-top-right-radius: 10px;
+                                            border-bottom-right-radius: 10px;
+                                            border: none;
+                                            background-color: #333;
+                                            color: white;
+                                        }
+                                        QComboBox::down-arrow {
+                                            image: url(arrow-down.png);
+                                            width: 20px;
+                                            height: 20px;
+                                            margin-right: 10px;
+                                        }
+                                        """)
+        
+        self.convert_layout.addWidget(self.convert_button)
+        self.convert_layout.addWidget(self.file_size_label)
+        self.convert_layout.addWidget(self.file_source)
+
+        self.layout.addLayout(self.convert_layout)
+
 
 
     def set_file(self, file_path):
@@ -183,7 +288,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Kommverters")
-        self.setFixedSize(600, 400)
+        self.setMinimumSize(600, 400)
         self.setStyleSheet("background-color: #111; color: white;")
 
         self.central_widget = QWidget()
