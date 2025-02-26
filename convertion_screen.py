@@ -32,7 +32,7 @@ class ConvertionScreen(QWidget):
 
         self.image_preview = QLabel()
         self.file_name_label = QLabel("")
-        self.file_name_label.setStyleSheet("font-size: 16px; color: #FF8800;")
+        self.file_name_label.setStyleSheet("font-size: 16px; color: #FFFFFF;")
 
         self.file_display_layout.addWidget(self.image_preview)
         self.file_display_layout.addWidget(self.file_name_label)
@@ -42,7 +42,7 @@ class ConvertionScreen(QWidget):
 
         self.format_layout = QVBoxLayout()
         self.format_label = QLabel("Format:")
-        self.format_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
+        self.format_label.setStyleSheet("color: #3c83cf; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.desired_format = QComboBox()
         self.desired_format.addItems(["PNG", "JPG", "BMP", "GIF"])
         self.desired_format.setStyleSheet("""
@@ -75,7 +75,7 @@ class ConvertionScreen(QWidget):
 
         self.output_name_layout = QVBoxLayout()
         self.output_name_label = QLabel("Output Name:")
-        self.output_name_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
+        self.output_name_label.setStyleSheet("color: #3c83cf; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.output_name = QLineEdit()
         self.output_name.setStyleSheet("background-color: #333; color: white;")
         self.output_name_layout.addWidget(self.output_name_label)
@@ -83,9 +83,9 @@ class ConvertionScreen(QWidget):
 
         self.size_layout = QVBoxLayout()
         self.size_label = QLabel("Size:")
-        self.size_label.setStyleSheet("color: #002eff; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
+        self.size_label.setStyleSheet("color: #3c83cf; font-size: 15px; margin-bottom: -14px; margin-left: -10px;")
         self.size_combo = QComboBox()
-        self.size_combo.addItems(["Small", "Medium", "Large"])
+        self.size_combo.addItems(["1", "0.8", "0.6", "0.4", "0.2"])
         self.size_combo.setStyleSheet("""
                                       QComboBox {
                                           background-color: #333;
@@ -146,6 +146,7 @@ class ConvertionScreen(QWidget):
             }
         """)
 
+
         self.file_size_label = QLabel("File Size: 0 KB")
         self.file_size_label.setStyleSheet("color: #FF8800; font-size: 15px; margin-right: 10px; background-color: transparent;")
         self.file_size_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center text
@@ -154,10 +155,11 @@ class ConvertionScreen(QWidget):
         self.file_source.addItems(["Local", "URL"])
         self.file_source.setStyleSheet("""
             QComboBox {
-                background-color: #333;
+                background-color: #FF8800;
                 color: white;
                 padding: 5px;
                 border-radius: 5px;
+                font-size: 16px;
             }
             QComboBox::drop-down {
                 subcontrol-origin: padding;
@@ -169,7 +171,7 @@ class ConvertionScreen(QWidget):
                 border-top-right-radius: 5px;
                 border-bottom-right-radius: 5px;
                 border: none;
-                background-color: #333;
+                background-color: transparent;
                 color: white;
             }
             QComboBox::down-arrow {
@@ -195,9 +197,12 @@ class ConvertionScreen(QWidget):
 
 
     def set_file(self, file_path):
-        """Update UI with file name and image preview (if applicable)."""
+        """Update UI with file name, file size, and image preview (if applicable)."""
         file_name = os.path.basename(file_path)
-        self.file_name_label.setText(file_name)
+        file_size = os.path.getsize(file_path) / 1024  # Convert bytes to KB
+        file_size_text = f"{file_size:.2f} KB"
+
+        self.file_name_label.setText(f"{file_name}\n{file_size_text}")
 
         # Check if the file is an image
         if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
@@ -207,3 +212,6 @@ class ConvertionScreen(QWidget):
                 self.image_preview.setPixmap(pixmap)
         else:
             self.image_preview.clear()  # Clear image preview for non-image files
+
+        # Update the file size label
+        self.file_size_label.setText(f"File Size: {file_size_text}")
