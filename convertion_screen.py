@@ -13,10 +13,13 @@ SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']
 CONVERSION_FORMATS = ['PNG', 'JPG', 'WEBP', 'GIF', 'BMP']
 
 class ConversionScreen(QWidget):
-    def __init__(self):
+    def __init__(self, go_back_callback=None):
         super().__init__()
+        self.go_back_callback = go_back_callback
         self.setWindowTitle("Conversion Screen")
         self.setStyleSheet("background-color: #111; color: white;")
+        # ... rest of your existing code ...
+
 
         # File attributes
         self.file_path: str = ""
@@ -43,6 +46,35 @@ class ConversionScreen(QWidget):
             "background-color: #222; border-radius: 10px; padding: 10px;"
         )
         self.wrapper_layout = QVBoxLayout(self.wrapper_container)
+
+        # Add a close/back button at the top right corner of the wrapper_layout
+        close_button_layout = QHBoxLayout()
+        close_button_layout.addStretch()  # push button to the right
+        
+        self.close_button = QPushButton("✕")  # Using the X symbol
+        self.close_button.setFixedSize(30, 30)  # Increased size
+        # Customize the button style to make it more visible:
+        self.close_button.setStyleSheet("""
+            QPushButton { 
+                background-color: #333; 
+                color: #FF8800; 
+                border: 1px solid #FF8800; 
+                border-radius: 15px; 
+                font-size: 16px; 
+                font-weight: bold;
+            }
+            QPushButton:hover { 
+                background-color: #FF8800; 
+                color: white; 
+            }
+        """)
+        close_button_layout.addWidget(self.close_button)
+        # Insert the close button layout at the top of the wrapper_layout
+        self.wrapper_layout.insertLayout(0, close_button_layout)
+        
+        # Connect the button to our go_back method
+        self.close_button.clicked.connect(self.go_back)
+
 
         # File display layout (preview and file name)
         self.file_display_layout = QHBoxLayout()
@@ -320,3 +352,13 @@ class ConversionScreen(QWidget):
         else:
             self.output_directory = ""
             self.update_output_name()
+
+    def go_back(self):
+        if self.go_back_callback:
+            self.go_back_callback()
+        else:
+            # Fallback: try to get the main window from the widget tree.
+            main_window = self.window()
+            if hasattr(main_window, 'drop_label'):
+                main_window.setCentralWidget(main_window.drop_label)
+

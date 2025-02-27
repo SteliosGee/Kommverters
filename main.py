@@ -9,19 +9,22 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Kommverters")
         self.setMinimumSize(600, 400)
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-
-        self.layout = QVBoxLayout(self.central_widget)
-
+        # Create the initial drop screen
         self.drop_label = DropLabel(self.show_convertion_screen)
-        self.layout.addWidget(self.drop_label)
-
-        self.convertion_screen = ConversionScreen()
-
+        
+        # Set the initial central widget
+        self.setCentralWidget(self.drop_label)
+        
     def show_convertion_screen(self, file_path):
+        # Create a new conversion screen instance each time
+        self.convertion_screen = ConversionScreen(self.show_drop_screen)
         self.convertion_screen.set_file(file_path)
         self.setCentralWidget(self.convertion_screen)
+
+    def show_drop_screen(self):
+        """Create a new drop label and set it as central widget"""
+        self.drop_label = DropLabel(self.show_convertion_screen)
+        self.setCentralWidget(self.drop_label)
 
 app = QApplication([])
 window = MainWindow()
