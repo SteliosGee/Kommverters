@@ -7,9 +7,7 @@ from PySide6.QtGui import QPixmap
 from PIL import Image
 import os
 import imghdr
-
-# Optionally, you could use convert_image if it provides additional functionality.
-# from convertions.images import convert_image
+from io import BytesIO
 
 SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']
 CONVERSION_FORMATS = ['PNG', 'JPG', 'WEBP', 'GIF', 'BMP']
@@ -117,7 +115,8 @@ class ConversionScreen(QWidget):
             }
         """)
 
-        self.file_size_label = QLabel("File Size: 0 KB")
+        # File size label that will display the estimated output file size
+        self.file_size_label = QLabel("Estimated File Size: 0 KB")
         self.file_size_label.setStyleSheet("color: #FF8800; font-size: 15px; margin-right: 10px; background-color: transparent;")
         self.file_size_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -158,6 +157,9 @@ class ConversionScreen(QWidget):
         self.convert_layout.addWidget(self.file_source, 1)
         self.layout.addLayout(self.convert_layout)
 
+        # Update estimated file size when the size selection changes
+        self.size_combo.currentIndexChanged.connect(self.update_estimated_file_size)
+
     def _combo_box_style(self) -> str:
         """Return the common style for combo boxes."""
         return """
@@ -194,10 +196,10 @@ class ConversionScreen(QWidget):
         self.file_size = os.path.getsize(file_path)
         formatted_size = self.format_file_size(self.file_size)
         self.file_name_label.setText(f"{file_name}\n{formatted_size}")
-        self.file_size_label.setText(f"File Size: {formatted_size}")
         self.update_format_options()
         self.show_preview()
         self.update_output_name()
+        self.update_estimated_file_size()
 
     def detect_file_format(self, file_path: str) -> str:
         """Detect file format using the file extension and imghdr."""
@@ -242,25 +244,60 @@ class ConversionScreen(QWidget):
             return f"{size_bytes / 1024:.1f} KB"
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
+    def update_estimated_file_size(self) -> None:
+        """
+        Estimate the output file size by resizing the image in memory with the
+        selected scale factor and updating the file size label.
+        """
+        if not self.file_path:
+            return
+        try:
+            scale = float(self.size_combo.currentText())
+            img = Image.open(self.file_path)
+            new_width = int(img.width * scale)
+            new_height = int(img.height * scale)
+            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+            buffer = BytesIO()
+            target_format = self.desired_format.currentText() if self.desired_format.currentText() else self.file_format
+            save_format = target_format.upper()
+            resized_img.save(buffer, format=save_format)
+            estimated_size = buffer.tell()
+            formatted_size = self.format_file_size(estimated_size)
+            self.file_size_label.setText(f"Estimated File Size: {formatted_size}")
+        except Exception as e:
+            self.file_size_label.setText("Estimated File Size: N/A")
+            print("Error estimating file size:", e)
+
     def convert_file(self) -> None:
-        """Perform the image file conversion."""
+        """Perform the image file conversion with the selected scaling factor."""
         if not self.file_path:
             QMessageBox.warning(self, "No File", "Please select a file to convert.")
             return
 
-        target_format = self.desired_format.currentText().lower()
-        output_path = self.get_output_path(target_format)
         try:
+            scale = float(self.size_combo.currentText())
+            target_format = self.desired_format.currentText().lower()
+            output_path = self.get_output_path(target_format)
+
             img = Image.open(self.file_path)
-            if img.mode == 'RGBA' and target_format in ['jpg', 'jpeg']:
-                img = img.convert('RGB')
-            img.save(output_path)
+            new_width = int(img.width * scale)
+            new_height = int(img.height * scale)
+            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+
+            # Convert mode if needed for JPEG output
+            if resized_img.mode == 'RGBA' and target_format in ['jpg', 'jpeg']:
+                resized_img = resized_img.convert('RGB')
+
+            resized_img.save(output_path)
             QMessageBox.information(self, "Success", f"Conversion successful:\n{output_path}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Conversion failed: {str(e)}")
 
     def get_output_path(self, target_format: str) -> str:
-        """Generate the output path based on the selected output directory and file name."""
+        """
+        Generate the output path based on the selected output directory,
+        file name, and target format.
+        """
         directory = self.output_directory if self.output_directory else os.path.dirname(self.file_path)
         base_name = os.path.splitext(os.path.basename(self.file_path))[0]
         # If a custom output name is provided, use its directory and name
