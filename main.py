@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 from drop_screen import DropLabel
-from convertion_screen import ConvertionScreen
+from convertion_screen import ConversionScreen
 from PySide6.QtCore import Qt
 
 class MainWindow(QMainWindow):
@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
         self.drop_label = DropLabel(self.show_convertion_screen)
         self.layout.addWidget(self.drop_label)
 
-        self.convertion_screen = ConvertionScreen()
+        self.convertion_screen = ConversionScreen()
 
     def show_convertion_screen(self, file_path):
         self.convertion_screen.set_file(file_path)
