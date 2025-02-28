@@ -18,8 +18,6 @@ class ConversionScreen(QWidget):
         self.go_back_callback = go_back_callback
         self.setWindowTitle("Conversion Screen")
         self.setStyleSheet("background-color: #111; color: white;")
-        # ... rest of your existing code ...
-
 
         # File attributes
         self.file_path: str = ""
@@ -47,44 +45,45 @@ class ConversionScreen(QWidget):
         )
         self.wrapper_layout = QVBoxLayout(self.wrapper_container)
 
-        # Add a close/back button at the top right corner of the wrapper_layout
-        close_button_layout = QHBoxLayout()
-        close_button_layout.addStretch()  # push button to the right
-        
-        self.close_button = QPushButton("✕")  # Using the X symbol
-        self.close_button.setFixedSize(30, 30)  # Increased size
-        # Customize the button style to make it more visible:
-        self.close_button.setStyleSheet("""
-            QPushButton { 
-                background-color: #333; 
-                color: #FF8800; 
-                border: 1px solid #FF8800; 
-                border-radius: 15px; 
-                font-size: 16px; 
-                font-weight: bold;
-            }
-            QPushButton:hover { 
-                background-color: #FF8800; 
-                color: white; 
-            }
-        """)
-        close_button_layout.addWidget(self.close_button)
-        # Insert the close button layout at the top of the wrapper_layout
-        self.wrapper_layout.insertLayout(0, close_button_layout)
-        
-        # Connect the button to our go_back method
-        self.close_button.clicked.connect(self.go_back)
-
-
-        # File display layout (preview and file name)
+        # File display layout (preview, file name, and close button in the same row)
         self.file_display_layout = QHBoxLayout()
         self.file_display_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
         self.image_preview = QLabel()
         self.file_name_label = QLabel("")
         self.file_name_label.setStyleSheet("font-size: 16px; color: #FFFFFF;")
+
         self.file_display_layout.addWidget(self.image_preview)
         self.file_display_layout.addWidget(self.file_name_label)
+
+        # Add a stretch so the close button will stay on the far right
+        self.file_display_layout.addStretch()
+
+        # Close (X) button
+        self.close_button = QPushButton("✕")
+        self.close_button.setFixedSize(30, 30)
+        self.close_button.setStyleSheet("""
+            QPushButton { 
+                color: #FF8800;  
+                font-size: 18px; 
+                font-weight: bold; 
+                background-color: #333; 
+                border: 1px solid #FF8800;
+                border-radius: 15px;
+            }
+            QPushButton:hover { 
+                color: white;
+                background-color: #FF8800;
+            }
+        """)
+        self.close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.close_button.clicked.connect(self.go_back)
+
+        self.file_display_layout.addWidget(self.close_button)
+
+        # Finally, add this layout to the wrapper
         self.wrapper_layout.addLayout(self.file_display_layout)
+
 
         # Output options layout
         self.output_layout = QHBoxLayout()
