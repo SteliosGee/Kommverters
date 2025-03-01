@@ -9,8 +9,11 @@ import os
 import imghdr
 from io import BytesIO
 
-SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']
-CONVERSION_FORMATS = ['PNG', 'JPG', 'WEBP', 'GIF', 'BMP']
+from convertions.documents import convert_document, DOCUMENT_FORMATS
+from convertions.images import convert_image
+
+SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'pdf', 'doc', 'docx']
+CONVERSION_FORMATS = ['PNG', 'JPG', 'WEBP', 'GIF', 'BMP', 'PDF', 'DOCX']
 
 class ConversionScreen(QWidget):
     def __init__(self, go_back_callback=None):
@@ -242,11 +245,23 @@ class ConversionScreen(QWidget):
         return ext
 
     def update_format_options(self) -> None:
-        """Update the desired format options excluding the current file format."""
+        """Update the desired format options based on the file type."""
         self.desired_format.clear()
-        current_format = 'jpg' if self.file_format in ['jpg', 'jpeg'] else self.file_format
-        formats = [fmt.upper() for fmt in CONVERSION_FORMATS if fmt.lower() != current_format]
-        self.desired_format.addItems(formats)
+        
+        # Handle image formats
+        if self.file_format in ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']:
+            current_format = 'jpg' if self.file_format in ['jpg', 'jpeg'] else self.file_format
+            formats = [fmt.upper() for fmt in ['png', 'jpg', 'webp', 'gif', 'bmp'] 
+                      if fmt.lower() != current_format]
+            self.desired_format.addItems(formats)
+        
+        # Handle document formats
+        elif self.file_format in ['pdf', 'doc', 'docx']:
+            if self.file_format == 'pdf':
+                self.desired_format.addItems(['DOCX'])
+            elif self.file_format in ['doc', 'docx']:
+                self.desired_format.addItems(['PDF'])
+        
         self.update_output_name()
 
     def update_output_name(self) -> None:
@@ -259,11 +274,25 @@ class ConversionScreen(QWidget):
         self.output_name.setText(os.path.join(directory, f"{file_name}.{target_format}"))
 
     def show_preview(self) -> None:
-        """Display a preview of the image if supported."""
-        if self.file_format in SUPPORTED_FORMATS:
+        """Display a preview of the file if supported."""
+        if self.file_format in ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']:
+            # Handle image preview
             pixmap = QPixmap(self.file_path)
-            pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, 
+                                Qt.TransformationMode.SmoothTransformation)
             self.image_preview.setPixmap(pixmap)
+        elif self.file_format in ['pdf', 'doc', 'docx']:
+            # Show document icon instead of preview
+            document_icon = QPixmap("document-icon.png")  # Create this icon file
+            if not document_icon.isNull():
+                document_icon = document_icon.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio,
+                                                Qt.TransformationMode.SmoothTransformation)
+                self.image_preview.setPixmap(document_icon)
+            else:
+                # Fallback to text if icon is not found
+                self.image_preview.clear()
+                self.image_preview.setText(self.file_format.upper())
+                self.image_preview.setStyleSheet("color: #FF8800; font-size: 16px;")
         else:
             self.image_preview.clear()
 
@@ -277,50 +306,68 @@ class ConversionScreen(QWidget):
 
     def update_estimated_file_size(self) -> None:
         """
-        Estimate the output file size by resizing the image in memory with the
-        selected scale factor and updating the file size label.
+        Estimate the output file size and update the file size label.
+        For documents, show actual file size only.
         """
         if not self.file_path:
             return
-        try:
-            scale = float(self.size_combo.currentText())
-            img = Image.open(self.file_path)
-            new_width = int(img.width * scale)
-            new_height = int(img.height * scale)
-            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-            buffer = BytesIO()
-            target_format = self.desired_format.currentText() if self.desired_format.currentText() else self.file_format
-            save_format = target_format.upper()
-            resized_img.save(buffer, format=save_format)
-            estimated_size = buffer.tell()
-            formatted_size = self.format_file_size(estimated_size)
-            self.file_size_label.setText(f"Estimated File Size: {formatted_size}")
-        except Exception as e:
-            self.file_size_label.setText("Estimated File Size: N/A")
-            print("Error estimating file size:", e)
+        
+        if self.file_format in ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']:
+            try:
+                scale = float(self.size_combo.currentText())
+                img = Image.open(self.file_path)
+                new_width = int(img.width * scale)
+                new_height = int(img.height * scale)
+                resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+                buffer = BytesIO()
+                target_format = self.desired_format.currentText().lower() if self.desired_format.currentText() else self.file_format
+                save_format = target_format.upper()
+                resized_img.save(buffer, format=save_format)
+                estimated_size = buffer.tell()
+                formatted_size = self.format_file_size(estimated_size)
+                self.file_size_label.setText(f"Estimated File Size: {formatted_size}")
+            except Exception as e:
+                self.file_size_label.setText("Estimated File Size: N/A")
+                print("Error estimating file size:", e)
+        else:
+            # For document files, just show the original size
+            formatted_size = self.format_file_size(self.file_size)
+            self.file_size_label.setText(f"File Size: {formatted_size}")
 
     def convert_file(self) -> None:
-        """Perform the image file conversion with the selected scaling factor."""
+        """Perform the file conversion based on file type."""
         if not self.file_path:
             QMessageBox.warning(self, "No File", "Please select a file to convert.")
             return
 
         try:
-            scale = float(self.size_combo.currentText())
             target_format = self.desired_format.currentText().lower()
             output_path = self.get_output_path(target_format)
-
-            img = Image.open(self.file_path)
-            new_width = int(img.width * scale)
-            new_height = int(img.height * scale)
-            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
-
-            # Convert mode if needed for JPEG output
-            if resized_img.mode == 'RGBA' and target_format in ['jpg', 'jpeg']:
-                resized_img = resized_img.convert('RGB')
-
-            resized_img.save(output_path)
+            
+            # Handle image conversion
+            if self.file_format in ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']:
+                scale = float(self.size_combo.currentText())
+                img = Image.open(self.file_path)
+                new_width = int(img.width * scale)
+                new_height = int(img.height * scale)
+                resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+                
+                # Convert mode if needed for JPEG output
+                if resized_img.mode == 'RGBA' and target_format in ['jpg', 'jpeg']:
+                    resized_img = resized_img.convert('RGB')
+                    
+                resized_img.save(output_path)
+            
+            # Handle document conversion
+            elif self.file_format in ['pdf', 'doc', 'docx']:
+                # Use the imported document conversion function
+                convert_document(self.file_path, output_path, target_format)
+            
             QMessageBox.information(self, "Success", f"Conversion successful:\n{output_path}")
+        
+        except ImportError as e:
+            QMessageBox.warning(self, "Missing Library", 
+                               f"{str(e)}\n\nPlease install the required library.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Conversion failed: {str(e)}")
 
